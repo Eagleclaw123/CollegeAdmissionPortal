@@ -463,28 +463,28 @@ const CollegeAdmissionPortal = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
       <header className="bg-white shadow-lg border-b-4 border-indigo-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-indigo-600 p-3 rounded-full">
-                <GraduationCap className="h-8 w-8 text-white" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 w-full sm:w-auto">
+              <div className="bg-indigo-600 p-2 sm:p-3 rounded-full">
+                <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+              <div className="text-center sm:text-left">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   College Admission Portal
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Find your perfect college based on rank and category
                 </p>
               </div>
             </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="bg-indigo-100 px-4 py-2 rounded-lg">
+            <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-center sm:justify-end">
+              <div className="bg-indigo-100 px-3 sm:px-4 py-2 rounded-lg text-sm">
                 <span className="text-indigo-800 font-semibold">
-                  {filteredColleges.length} Colleges Found
+                  {filteredColleges.length} Found
                 </span>
               </div>
-              <div className="bg-green-100 px-4 py-2 rounded-lg">
+              <div className="bg-green-100 px-3 sm:px-4 py-2 rounded-lg text-sm">
                 <span className="text-green-800 font-semibold">
                   Showing {displayedColleges.length}
                 </span>
@@ -511,10 +511,10 @@ const CollegeAdmissionPortal = () => {
             </div>
 
             {/* Filter Toggle */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-4">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex items-center justify-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors w-full sm:w-auto"
               >
                 <Filter className="h-4 w-4" />
                 <span>Advanced Filters</span>
@@ -525,24 +525,24 @@ const CollegeAdmissionPortal = () => {
                 )}
               </button>
 
-              <div className="flex space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 <button
                   onClick={downloadExcel}
-                  className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                   title="Download as Excel/CSV"
                 >
                   <FileSpreadsheet className="h-4 w-4" />
                   <Download className="h-3 w-3" />
-                  <span>Excel</span>
+                  <span className="hidden sm:inline">Excel</span>
                 </button>
                 <button
                   onClick={downloadPDF}
-                  className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                   title="Download as PDF"
                 >
                   <FileText className="h-4 w-4" />
                   <Download className="h-3 w-3" />
-                  <span>PDF</span>
+                  <span className="hidden sm:inline">PDF</span>
                 </button>
               </div>
             </div>
@@ -704,10 +704,10 @@ const CollegeAdmissionPortal = () => {
                   onClick={() => toggleExpand(college.id)}
                 >
                   <div className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-xl font-bold text-gray-900">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                      <div className="flex-1 w-full">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                             {college.instituteName}
                           </h3>
                           <div className="flex items-center text-indigo-600">
@@ -718,33 +718,33 @@ const CollegeAdmissionPortal = () => {
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-4 mb-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-2 sm:gap-4 mb-4">
                           <div className="flex items-center space-x-1 text-gray-600">
-                            <BookOpen className="h-4 w-4" />
-                            <span className="text-sm">
+                            <BookOpen className="h-4 w-4 flex-shrink-0" />
+                            <span className="text-sm truncate">
                               {college.branchName}
                             </span>
                           </div>
                           <div className="flex items-center space-x-1 text-gray-600">
-                            <MapPin className="h-4 w-4" />
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
                             <span className="text-sm">{college.place}</span>
                           </div>
                           <div className="flex items-center space-x-1 text-gray-600">
-                            <Building className="h-4 w-4" />
+                            <Building className="h-4 w-4 flex-shrink-0" />
                             <span className="text-sm">
                               {college.collegeType}
                             </span>
                           </div>
                           <div className="flex items-center space-x-1 text-gray-600">
-                            <Calendar className="h-4 w-4" />
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
                             <span className="text-sm">
                               Est. {college.yearOfEstab}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center space-x-1 text-green-600 font-bold">
+                      <div className="text-right w-full sm:w-auto">
+                        <div className="flex items-center justify-end space-x-1 text-green-600 font-bold">
                           <IndianRupee className="h-4 w-4" />
                           <span>
                             {parseInt(college.tuitionFee).toLocaleString()}
@@ -761,18 +761,18 @@ const CollegeAdmissionPortal = () => {
                       <h4 className="font-semibold text-gray-900 mb-3">
                         Closing Ranks
                       </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
                         {Object.entries(college.ranks).map(
                           ([category, ranks]) => (
                             <div key={category} className="text-center">
-                              <div className="bg-white rounded-lg p-3 shadow-sm">
+                              <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
                                 <div className="font-medium text-indigo-600 uppercase text-xs mb-1">
                                   {category === "ews"
                                     ? "EWS"
                                     : category.replace("_", "-")}
                                 </div>
                                 <div className="space-y-1">
-                                  <div className="text-sm">
+                                  <div className="text-xs sm:text-sm">
                                     <span className="text-gray-600">M:</span>
                                     <span className="font-semibold ml-1">
                                       {category === "ews"
@@ -780,7 +780,7 @@ const CollegeAdmissionPortal = () => {
                                         : ranks.boys || "-"}
                                     </span>
                                   </div>
-                                  <div className="text-sm">
+                                  <div className="text-xs sm:text-sm">
                                     <span className="text-gray-600">F:</span>
                                     <span className="font-semibold ml-1">
                                       {category === "ews"
