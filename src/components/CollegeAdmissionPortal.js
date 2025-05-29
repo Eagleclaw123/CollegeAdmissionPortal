@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Loader2,
 } from "lucide-react";
 import { COLLEGE_DATA } from "../data/constants";
 
@@ -58,13 +59,15 @@ const CATEGORIES = [
 ];
 const GENDERS = ["BOYS", "GIRLS"];
 const BRANCHES = [
-  "Computer Science Engineering",
-  "Electronics & Communication Engineering",
-  "Information Technology",
-  "Mechanical Engineering",
-  "Civil Engineering",
-  "Electrical Engineering",
+  "COMPUTER SCIENCE AND ENGINEERING",
+  "ELECTRONICS AND COMMUNICATION ENGINEERING",
+  "INFORMATION TECHNOLOGY",
+  "MECHANICAL ENGINEERING",
+  "CIVIL ENGINEERING",
+  "ELECTRICAL AND ELECTRONICS ENGINEERING",
 ];
+
+const COLLEGES_PER_PAGE = 10;
 
 const CollegeAdmissionPortal = () => {
   // Initial search state
@@ -84,12 +87,17 @@ const CollegeAdmissionPortal = () => {
     maxRank: "",
     place: "",
     collegeType: "",
+    branch: "",
   });
 
   const [showFilters, setShowFilters] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("rank-asc");
+
+  // Pagination states
+  const [displayedCount, setDisplayedCount] = useState(COLLEGES_PER_PAGE);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Use COLLEGE_DATA if available, otherwise use SAMPLE_COLLEGE_DATA
   const collegeData =
@@ -114,25 +122,34 @@ const CollegeAdmissionPortal = () => {
     // Filter by rank range and category
     if (filters.category && filters.gender) {
       const categoryKey = filters.category.toLowerCase();
-      const genderKey = filters.gender.toLowerCase();
+      const isEWS = categoryKey === "ews";
+
+      // Map gender keys based on category
+      let genderKey = filters.gender.toLowerCase();
+      if (isEWS) {
+        // For EWS category, map BOYS to genOu and GIRLS to girlsOu
+        genderKey = genderKey === "boys" ? "genOu" : "girlsOu";
+      }
 
       filtered = filtered.filter((college) => {
-        const rank = parseInt(college.ranks[categoryKey]?.[genderKey]) || 0;
-        if (rank === 0) return false;
+        const closingRank =
+          parseInt(college.ranks[categoryKey]?.[genderKey]) || 0;
+        if (closingRank === 0) return false;
 
-        const minRank = parseInt(filters.minRank) || 0;
+        const studentRank = parseInt(filters.minRank) || 0;
         const maxRank = parseInt(filters.maxRank) || Infinity;
 
-        return rank >= minRank && rank <= maxRank;
+        return (
+          closingRank >= studentRank &&
+          (maxRank === Infinity || closingRank <= maxRank)
+        );
       });
     }
 
     // Filter by branch
-    if (initialSearch.branch) {
+    if (filters.branch) {
       filtered = filtered.filter((college) =>
-        college.branchName
-          .toLowerCase()
-          .includes(initialSearch.branch.toLowerCase())
+        college.branchName.toLowerCase().includes(filters.branch.toLowerCase())
       );
     }
 
@@ -153,13 +170,19 @@ const CollegeAdmissionPortal = () => {
     }
 
     return filtered;
-  }, [filters, searchTerm, initialSearch.branch, collegeData]);
+  }, [filters, searchTerm, collegeData]);
 
   // Sort colleges
   const sortedColleges = useMemo(() => {
     return [...filteredColleges].sort((a, b) => {
       const categoryKey = filters.category.toLowerCase();
-      const genderKey = filters.gender.toLowerCase();
+      const isEWS = categoryKey === "ews";
+
+      // Map gender keys based on category
+      let genderKey = filters.gender.toLowerCase();
+      if (isEWS) {
+        genderKey = genderKey === "boys" ? "genOu" : "girlsOu";
+      }
 
       switch (sortBy) {
         case "rank-asc":
@@ -186,6 +209,44 @@ const CollegeAdmissionPortal = () => {
     });
   }, [filteredColleges, sortBy, filters.category, filters.gender]);
 
+  // Colleges to display (limited by displayedCount)
+  const displayedColleges = useMemo(() => {
+    return sortedColleges.slice(0, displayedCount);
+  }, [sortedColleges, displayedCount]);
+
+  // Reset displayed count when filters change
+  useEffect(() => {
+    setDisplayedCount(COLLEGES_PER_PAGE);
+  }, [filters, searchTerm, sortBy]);
+
+  // Load more colleges
+  const loadMoreColleges = useCallback(() => {
+    if (isLoading || displayedCount >= sortedColleges.length) return;
+
+    setIsLoading(true);
+    setTimeout(() => {
+      setDisplayedCount((prev) =>
+        Math.min(prev + COLLEGES_PER_PAGE, sortedColleges.length)
+      );
+      setIsLoading(false);
+    }, 500);
+  }, [isLoading, displayedCount, sortedColleges.length]);
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 1000 // Load when 1000px from bottom
+      ) {
+        loadMoreColleges();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loadMoreColleges]);
+
   const handleInitialSearch = (e) => {
     e.preventDefault();
     if (
@@ -198,11 +259,13 @@ const CollegeAdmissionPortal = () => {
     }
 
     setFilters({
-      ...filters,
-      minRank: initialSearch.rank,
-      maxRank: (parseInt(initialSearch.rank) + 5000).toString(),
       category: initialSearch.category,
       gender: initialSearch.gender,
+      minRank: initialSearch.rank,
+      maxRank: "",
+      place: "",
+      collegeType: "",
+      branch: initialSearch.branch || "",
     });
 
     setHasSearched(true);
@@ -213,9 +276,10 @@ const CollegeAdmissionPortal = () => {
       category: initialSearch.category,
       gender: initialSearch.gender,
       minRank: initialSearch.rank,
-      maxRank: (parseInt(initialSearch.rank) + 5000).toString(),
+      maxRank: "",
       place: "",
       collegeType: "",
+      branch: initialSearch.branch || "",
     });
     setSearchTerm("");
   };
@@ -402,11 +466,34 @@ const CollegeAdmissionPortal = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Min Rank
+                        Branch
+                      </label>
+                      <select
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        value={filters.branch}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            branch: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">All Branches</option>
+                        {BRANCHES.map((branch) => (
+                          <option key={branch} value={branch}>
+                            {branch}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Your Rank
                       </label>
                       <input
                         type="number"
-                        placeholder="e.g., 1000"
+                        placeholder="Enter your rank"
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                         value={filters.minRank}
                         onChange={(e) =>
@@ -416,15 +503,18 @@ const CollegeAdmissionPortal = () => {
                           }))
                         }
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Shows colleges with closing rank ≥ your rank
+                      </p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Max Rank
+                        Max Rank (Optional)
                       </label>
                       <input
                         type="number"
-                        placeholder="e.g., 5000"
+                        placeholder="Maximum closing rank"
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                         value={filters.maxRank}
                         onChange={(e) =>
@@ -469,9 +559,10 @@ const CollegeAdmissionPortal = () => {
                         }
                       >
                         <option value="">All Types</option>
-                        <option value="Government">Government</option>
-                        <option value="Private">Private</option>
-                        <option value="Autonomous">Autonomous</option>
+                        <option value="GOV">Government</option>
+                        <option value="PVT">Private</option>
+                        <option value="UNIV">University</option>
+                        <option value="SF">Self Financed</option>
                       </select>
                     </div>
 
@@ -496,7 +587,7 @@ const CollegeAdmissionPortal = () => {
 
             {/* College Cards */}
             <div className="space-y-6">
-              {sortedColleges.length === 0 ? (
+              {displayedColleges.length === 0 && !isLoading ? (
                 <div className="text-center py-12 bg-white rounded-xl shadow-lg">
                   <GraduationCap className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-medium text-gray-900 mb-2">
@@ -507,185 +598,214 @@ const CollegeAdmissionPortal = () => {
                   </p>
                 </div>
               ) : (
-                sortedColleges.map((college) => (
-                  <div
-                    key={college.id}
-                    className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-                    onClick={() => toggleExpand(college.id)}
-                  >
-                    <div className="p-6">
-                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xl font-bold text-gray-900">
-                              {college.instituteName}
-                            </h3>
-                            <div className="flex items-center text-indigo-600">
-                              {expandedCard === college.id ? (
-                                <ChevronUp className="h-5 w-5" />
-                              ) : (
-                                <ChevronDown className="h-5 w-5" />
-                              )}
+                <>
+                  {displayedColleges.map((college) => (
+                    <div
+                      key={college.id}
+                      className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                      onClick={() => toggleExpand(college.id)}
+                    >
+                      <div className="p-6">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {college.instituteName}
+                              </h3>
+                              <div className="flex items-center text-indigo-600">
+                                {expandedCard === college.id ? (
+                                  <ChevronUp className="h-5 w-5" />
+                                ) : (
+                                  <ChevronDown className="h-5 w-5" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-4">
+                              <div className="flex items-center space-x-1 text-gray-600">
+                                <BookOpen className="h-4 w-4" />
+                                <span className="text-sm">
+                                  {college.branchName}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-gray-600">
+                                <MapPin className="h-4 w-4" />
+                                <span className="text-sm">{college.place}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-gray-600">
+                                <Building className="h-4 w-4" />
+                                <span className="text-sm">
+                                  {college.collegeType}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-gray-600">
+                                <Calendar className="h-4 w-4" />
+                                <span className="text-sm">
+                                  Est. {college.yearOfEstab}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-4">
-                            <div className="flex items-center space-x-1 text-gray-600">
-                              <BookOpen className="h-4 w-4" />
-                              <span className="text-sm">
-                                {college.branchName}
+                          <div className="text-right">
+                            <div className="flex items-center space-x-1 text-green-600 font-bold">
+                              <IndianRupee className="h-4 w-4" />
+                              <span>
+                                {parseInt(college.tuitionFee).toLocaleString()}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-1 text-gray-600">
-                              <MapPin className="h-4 w-4" />
-                              <span className="text-sm">{college.place}</span>
-                            </div>
-                            <div className="flex items-center space-x-1 text-gray-600">
-                              <Building className="h-4 w-4" />
-                              <span className="text-sm">
-                                {college.collegeType}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-1 text-gray-600">
-                              <Calendar className="h-4 w-4" />
-                              <span className="text-sm">
-                                Est. {college.yearOfEstab}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center space-x-1 text-green-600 font-bold">
-                            <IndianRupee className="h-4 w-4" />
-                            <span>
-                              {parseInt(college.tuitionFee).toLocaleString()}
+                            <span className="text-sm text-gray-500">
+                              Annual Fee
                             </span>
                           </div>
-                          <span className="text-sm text-gray-500">
-                            Annual Fee
-                          </span>
                         </div>
-                      </div>
 
-                      {/* Rank Information */}
-                      <div className="mt-4 bg-gray-50 rounded-lg p-4">
-                        <h4 className="font-semibold text-gray-900 mb-3">
-                          Closing Ranks
-                        </h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                          {Object.entries(college.ranks).map(
-                            ([category, ranks]) => (
-                              <div key={category} className="text-center">
-                                <div className="bg-white rounded-lg p-3 shadow-sm">
-                                  <div className="font-medium text-indigo-600 uppercase text-xs mb-1">
-                                    {category === "ews"
-                                      ? "EWS"
-                                      : category.replace("_", "-")}
-                                  </div>
-                                  <div className="space-y-1">
-                                    <div className="text-sm">
-                                      <span className="text-gray-600">M:</span>
-                                      <span className="font-semibold ml-1">
-                                        {category === "ews"
-                                          ? ranks.genOu || "-"
-                                          : ranks.boys || "-"}
-                                      </span>
+                        {/* Rank Information */}
+                        <div className="mt-4 bg-gray-50 rounded-lg p-4">
+                          <h4 className="font-semibold text-gray-900 mb-3">
+                            Closing Ranks
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {Object.entries(college.ranks).map(
+                              ([category, ranks]) => (
+                                <div key={category} className="text-center">
+                                  <div className="bg-white rounded-lg p-3 shadow-sm">
+                                    <div className="font-medium text-indigo-600 uppercase text-xs mb-1">
+                                      {category === "ews"
+                                        ? "EWS"
+                                        : category.replace("_", "-")}
                                     </div>
-                                    <div className="text-sm">
-                                      <span className="text-gray-600">F:</span>
-                                      <span className="font-semibold ml-1">
-                                        {category === "ews"
-                                          ? ranks.girlsOu || "-"
-                                          : ranks.girls || "-"}
-                                      </span>
+                                    <div className="space-y-1">
+                                      <div className="text-sm">
+                                        <span className="text-gray-600">
+                                          {category === "ews"
+                                            ? "General:"
+                                            : "M:"}
+                                        </span>
+                                        <span className="font-semibold ml-1">
+                                          {category === "ews"
+                                            ? ranks.genOu || "-"
+                                            : ranks.boys || "-"}
+                                        </span>
+                                      </div>
+                                      <div className="text-sm">
+                                        <span className="text-gray-600">
+                                          {category === "ews" ? "Girls:" : "F:"}
+                                        </span>
+                                        <span className="font-semibold ml-1">
+                                          {category === "ews"
+                                            ? ranks.girlsOu || "-"
+                                            : ranks.girls || "-"}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            )
-                          )}
+                              )
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Expanded Content */}
-                      {expandedCard === college.id && (
-                        <div className="mt-6 pt-6 border-t border-gray-200">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-3">
-                              <h4 className="font-semibold text-gray-900 mb-3">
-                                College Details
-                              </h4>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    Institute Code:
-                                  </span>
-                                  <span className="font-medium">
-                                    {college.instCode}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    Branch Code:
-                                  </span>
-                                  <span className="font-medium">
-                                    {college.branchCode}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    District Code:
-                                  </span>
-                                  <span className="font-medium">
-                                    {college.distCode}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    Co-Education:
-                                  </span>
-                                  <span className="font-medium flex items-center">
-                                    <Users className="h-4 w-4 mr-1" />
-                                    {college.coEducation}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    Affiliated To:
-                                  </span>
-                                  <span className="font-medium">
-                                    {college.affiliatedTo}
-                                  </span>
+                        {/* Expanded Content */}
+                        {expandedCard === college.id && (
+                          <div className="mt-6 pt-6 border-t border-gray-200">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-gray-900 mb-3">
+                                  College Details
+                                </h4>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Institute Code:
+                                    </span>
+                                    <span className="font-medium">
+                                      {college.instCode}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Branch Code:
+                                    </span>
+                                    <span className="font-medium">
+                                      {college.branchCode}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      District Code:
+                                    </span>
+                                    <span className="font-medium">
+                                      {college.distCode}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Co-Education:
+                                    </span>
+                                    <span className="font-medium flex items-center">
+                                      <Users className="h-4 w-4 mr-1" />
+                                      {college.coEducation}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Affiliated To:
+                                    </span>
+                                    <span className="font-medium">
+                                      {college.affiliatedTo}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            <div className="space-y-3">
-                              <h4 className="font-semibold text-gray-900 mb-3">
-                                Additional Information
-                              </h4>
-                              <div className="bg-blue-50 p-4 rounded-lg">
-                                <p className="text-sm text-blue-800">
-                                  <strong>Note:</strong> The closing ranks shown
-                                  are based on previous year's admission data.
-                                  Actual cutoffs may vary depending on the
-                                  number of applicants and seat availability.
-                                </p>
-                              </div>
-                              <div className="bg-green-50 p-4 rounded-lg">
-                                <p className="text-sm text-green-800">
-                                  <strong>Fee Structure:</strong> The tuition
-                                  fee mentioned is the annual fee. Additional
-                                  charges like hostel, mess, and other
-                                  facilities may apply separately.
-                                </p>
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-gray-900 mb-3">
+                                  Additional Information
+                                </h4>
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                  <p className="text-sm text-blue-800">
+                                    <strong>Note:</strong> The closing ranks
+                                    shown are based on previous year's admission
+                                    data. Actual cutoffs may vary depending on
+                                    the number of applicants and seat
+                                    availability.
+                                  </p>
+                                </div>
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                  <p className="text-sm text-green-800">
+                                    <strong>Fee Structure:</strong> The tuition
+                                    fee mentioned is the annual fee. Additional
+                                    charges like hostel, mess, and other
+                                    facilities may apply separately.
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+
+                  {isLoading && (
+                    <div className="flex justify-center py-4">
+                      <div className="flex items-center space-x-2 text-indigo-600">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span>Loading more colleges...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isLoading &&
+                    displayedColleges.length === sortedColleges.length &&
+                    sortedColleges.length > 0 && (
+                      <div className="text-center py-4 text-gray-600">
+                        <p>
+                          End of results • {sortedColleges.length} colleges
+                          found
+                        </p>
+                      </div>
+                    )}
+                </>
               )}
             </div>
           </>
