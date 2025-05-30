@@ -658,55 +658,56 @@ const CollegeAdmissionPortal = () => {
                           </div>
                         </div>
 
-                        {/* Rank Information */}
-                        <div className="mt-4 bg-gray-50 rounded-lg p-4">
-                          <h4 className="font-semibold text-gray-900 mb-3">
-                            Closing Ranks
-                          </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            {Object.entries(college.ranks).map(
-                              ([category, ranks]) => (
-                                <div key={category} className="text-center">
-                                  <div className="bg-white rounded-lg p-3 shadow-sm">
-                                    <div className="font-medium text-indigo-600 uppercase text-xs mb-1">
-                                      {category === "ews"
-                                        ? "EWS"
-                                        : category.replace("_", "-")}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <div className="text-sm">
-                                        <span className="text-gray-600">
-                                          {category === "ews"
-                                            ? "General:"
-                                            : "M:"}
-                                        </span>
-                                        <span className="font-semibold ml-1">
-                                          {category === "ews"
-                                            ? ranks.genOu || "-"
-                                            : ranks.boys || "-"}
-                                        </span>
-                                      </div>
-                                      <div className="text-sm">
-                                        <span className="text-gray-600">
-                                          {category === "ews" ? "Girls:" : "F:"}
-                                        </span>
-                                        <span className="font-semibold ml-1">
-                                          {category === "ews"
-                                            ? ranks.girlsOu || "-"
-                                            : ranks.girls || "-"}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </div>
-
                         {/* Expanded Content */}
                         {expandedCard === college.id && (
                           <div className="mt-6 pt-6 border-t border-gray-200">
+                            {/* Rank Information */}
+                            <div className="mt-4 bg-gray-50 rounded-lg p-4">
+                              <h4 className="font-semibold text-gray-900 mb-3">
+                                Closing Ranks
+                              </h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                {Object.entries(college.ranks).map(
+                                  ([category, ranks]) => (
+                                    <div key={category} className="text-center">
+                                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="font-medium text-indigo-600 uppercase text-xs mb-1">
+                                          {category === "ews"
+                                            ? "EWS"
+                                            : category.replace("_", "-")}
+                                        </div>
+                                        <div className="space-y-1">
+                                          <div className="text-sm">
+                                            <span className="text-gray-600">
+                                              {category === "ews"
+                                                ? "General:"
+                                                : "M:"}
+                                            </span>
+                                            <span className="font-semibold ml-1">
+                                              {category === "ews"
+                                                ? ranks.genOu || "-"
+                                                : ranks.boys || "-"}
+                                            </span>
+                                          </div>
+                                          <div className="text-sm">
+                                            <span className="text-gray-600">
+                                              {category === "ews"
+                                                ? "Girls:"
+                                                : "F:"}
+                                            </span>
+                                            <span className="font-semibold ml-1">
+                                              {category === "ews"
+                                                ? ranks.girlsOu || "-"
+                                                : ranks.girls || "-"}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="space-y-3">
                                 <h4 className="font-semibold text-gray-900 mb-3">

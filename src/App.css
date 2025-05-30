@@ -46,3 +46,18 @@ body {
     -webkit-print-color-adjust: exact;
   }
 }
+
+select option {
+  padding: 8px;
+}
+
+select optgroup {
+  font-weight: 600;
+  color: #4f46e5;
+  padding: 8px 0;
+}
+
+select option:checked {
+  background-color: #eef2ff;
+  color: #4f46e5;
+}
