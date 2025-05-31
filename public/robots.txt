@@ -1,3 +1,18 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap location
+Sitemap: https://your-domain.com/sitemap.xml
+
+# Crawl delay (optional - be considerate to search engines)
+Crawl-delay: 1
+
+# Block access to admin areas if any
+# Disallow: /admin/
+# Disallow: /private/
+
+# Allow all content for this educational portal
+Allow: /static/
+Allow: /images/
+Allow: /*.cssa
+Allow: /*.js
